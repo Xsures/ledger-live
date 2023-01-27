@@ -28,7 +28,6 @@ import { NavigatorName, ScreenName } from "../../const";
 import EmptyAccountCard from "../Account/EmptyAccountCard";
 import CurrencyBackgroundGradient from "../../components/CurrencyBackgroundGradient";
 import Header from "./Header";
-import { countervalueFirstSelector } from "../../reducers/settings";
 import { track, TrackScreen } from "../../analytics";
 import { FabAssetActions } from "../../components/FabActions/actionsList/asset";
 import { AccountsNavigatorParamList } from "../../components/RootNavigator/types/AccountsNavigator";
@@ -52,7 +51,6 @@ const AssetScreen = ({ route }: NavigationProps) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const navigation = useNavigation<NavigationProps["navigation"]>();
-  const shouldUseCounterValue = useSelector(countervalueFirstSelector);
   const { currency } = route?.params;
   const cryptoAccounts = useSelector(
     flattenAccountsByCryptoCurrencyScreenSelector(currency),
@@ -191,7 +189,6 @@ const AssetScreen = ({ route }: NavigationProps) => {
         currentPositionY={currentPositionY}
         graphCardEndPosition={graphCardEndPosition}
         currency={currency}
-        shouldUseCounterValue={shouldUseCounterValue}
         currencyBalance={currencyBalance}
       />
     </TabBarSafeAreaView>

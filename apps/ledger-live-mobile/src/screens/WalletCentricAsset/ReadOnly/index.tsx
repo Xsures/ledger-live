@@ -21,10 +21,7 @@ import SectionTitle from "../../WalletCentricSections/SectionTitle";
 import EmptyAccountCard from "../../Account/EmptyAccountCard";
 import CurrencyBackgroundGradient from "../../../components/CurrencyBackgroundGradient";
 import Header from "../Header";
-import {
-  countervalueFirstSelector,
-  hasOrderedNanoSelector,
-} from "../../../reducers/settings";
+import { hasOrderedNanoSelector } from "../../../reducers/settings";
 import BuyDeviceBanner, {
   IMAGE_PROPS_BIG_NANO,
 } from "../../../components/BuyDeviceBanner";
@@ -55,7 +52,6 @@ const ReadOnlyAssetScreen = ({ route }: NavigationProps) => {
   const { t } = useTranslation();
   const currency = route?.params?.currency;
   const { colors } = useTheme();
-  const useCounterValue = useSelector(countervalueFirstSelector);
 
   const [graphCardEndPosition, setGraphCardEndPosition] = useState(100);
   const currentPositionY = useSharedValue(0);
@@ -147,7 +143,6 @@ const ReadOnlyAssetScreen = ({ route }: NavigationProps) => {
         currentPositionY={currentPositionY}
         graphCardEndPosition={graphCardEndPosition}
         currency={currency}
-        shouldUseCounterValue={useCounterValue}
         currencyBalance={currencyBalanceBigNumber}
       />
     </TabBarSafeAreaView>

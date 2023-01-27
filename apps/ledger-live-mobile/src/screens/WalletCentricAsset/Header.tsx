@@ -14,7 +14,10 @@ import BigNumber from "bignumber.js";
 import Touchable from "../../components/Touchable";
 import { ScreenName } from "../../const";
 import { withDiscreetMode } from "../../context/DiscreetModeContext";
-import { readOnlyModeEnabledSelector } from "../../reducers/settings";
+import {
+  countervalueFirstSelector,
+  readOnlyModeEnabledSelector,
+} from "../../reducers/settings";
 import { track } from "../../analytics";
 import CurrencyUnitValue from "../../components/CurrencyUnitValue";
 import Placeholder from "../../components/Placeholder";
@@ -25,18 +28,16 @@ function Header({
   currentPositionY,
   graphCardEndPosition,
   currency,
-  shouldUseCounterValue,
   currencyBalance,
 }: {
   currentPositionY: Animated.SharedValue<number>;
   graphCardEndPosition: number;
   currency: Currency;
-  shouldUseCounterValue?: boolean;
   currencyBalance: BigNumber;
 }) {
   const navigation = useNavigation();
   const { t } = useTranslation();
-
+  const shouldUseCounterValue = useSelector(countervalueFirstSelector);
   const readOnlyModeEnabled = useSelector(readOnlyModeEnabledSelector);
 
   const onBackButtonPress = useCallback(() => {
