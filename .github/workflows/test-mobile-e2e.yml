@@ -200,7 +200,7 @@ jobs:
           cat $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
       - name: install libpulse0
         run: |
-          apt-get install libpulse0
+          apt-get install libpulse0 -y
       - name: Create Emulator
         run: |
           ls $ANDROID_HOME
