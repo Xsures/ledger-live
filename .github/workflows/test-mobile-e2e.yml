@@ -200,6 +200,7 @@ jobs:
           echo "hw.ramSize=4096M" > $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
           echo "hw.cpu.ncore=4" > $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
           echo "disk.dataPartition.size=4096M" > $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
+          cat $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
       - name: Create Emulator
         run: |
           $ANDROID_HOME/emulator/emulator --verbose --no-boot-anim --no-audio --no-window --gpu swiftshader_indirect --camera-back none @Pixel_5_API_31 &
