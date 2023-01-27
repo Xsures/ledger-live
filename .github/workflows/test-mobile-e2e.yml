@@ -197,7 +197,10 @@ jobs:
           echo "hw.ramSize=4096M" >> $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
           echo "hw.cpu.ncore=4" >> $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
           echo "disk.dataPartition.size=4096M" >> $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
-          cat $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.ini
+          cat $ANDROID_AVD_HOME/$DEVICE_NAME.avd/config.
+      - name: install libpulse0
+        run: |
+          apt-get install libpulse0
       - name: Create Emulator
         run: |
           ls $ANDROID_HOME
