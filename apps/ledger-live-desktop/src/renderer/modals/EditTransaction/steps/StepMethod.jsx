@@ -50,7 +50,7 @@ const StepMethod = ({ t, transaction, transactionRaw }: StepProps) => {
         key={0}
         selected={!isCancel}
         onClick={() => {
-          transaction.amount = transactionRaw.amount;
+          transaction.amount = BigNumber(transactionRaw.amount);
           setEditType("speedup");
         }}
       >

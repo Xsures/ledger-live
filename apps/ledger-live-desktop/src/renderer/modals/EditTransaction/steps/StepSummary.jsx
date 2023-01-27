@@ -58,7 +58,6 @@ export default class StepSummary extends PureComponent<StepProps> {
     if (!mainAccount || !transaction) return null;
     const { estimatedFees, totalSpent } = status;
     const amount = transaction.amount;
-    console.log(amount);
     if (amount.isEqualTo(BigNumber(0))) {
       // increase gas fees in case of cancel flow as we don't have the fees input screen for cancel flow
       if (EIP1559ShouldBeUsed(account.currency)) {
