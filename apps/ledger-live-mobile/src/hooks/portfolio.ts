@@ -41,15 +41,26 @@ export function useBalanceHistoryWithCountervalue({
  *    one "sync" produces many successive updates of `accounts` array at short intervals (<1s), thus resulting
  *    in this computation here being done everytime, causing more dropped frames
  */
-export function usePortfolio(
-  accounts?: AccountLike[],
+export function usePortfolioAllAccounts(options?: GetPortfolioOptionsType) {
+  const to = useSelector(counterValueCurrencySelector);
+  const accounts = useSelector(accountsSelector);
+  const range = useSelector(selectedTimeRangeSelector);
+  return usePortfolioCommon({
+    accounts,
+    range,
+    to,
+    options,
+  });
+}
+
+export function usePortfolioForAccounts(
+  accounts: AccountLike[],
   options?: GetPortfolioOptionsType,
 ) {
   const to = useSelector(counterValueCurrencySelector);
-  const accountsSelected = useSelector(accountsSelector);
   const range = useSelector(selectedTimeRangeSelector);
   return usePortfolioCommon({
-    accounts: accounts || accountsSelected,
+    accounts,
     range,
     to,
     options,

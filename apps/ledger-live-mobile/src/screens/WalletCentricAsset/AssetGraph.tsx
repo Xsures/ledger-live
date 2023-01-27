@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { CryptoOrTokenCurrency, Currency } from "@ledgerhq/types-cryptoassets";
 import { AccountLike } from "@ledgerhq/types-live";
 import AssetCentricGraphCard from "../../components/AssetCentricGraphCard";
-import { usePortfolio } from "../../hooks/portfolio";
+import { usePortfolioForAccounts } from "../../hooks/portfolio";
 import { counterValueCurrencySelector } from "../../reducers/settings";
 
 type Props = {
@@ -24,7 +24,7 @@ const AssetGraph = ({
   accountsAreEmpty,
   currencyBalance,
 }: Props) => {
-  const assetPortfolio = usePortfolio(accounts, {
+  const assetPortfolio = usePortfolioForAccounts(accounts, {
     flattenSourceAccounts: false,
   });
   const counterValueCurrency: Currency = useSelector(
