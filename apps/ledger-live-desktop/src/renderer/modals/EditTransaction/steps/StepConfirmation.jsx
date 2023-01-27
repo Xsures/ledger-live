@@ -26,17 +26,7 @@ const Container: ThemedComponent<{ shouldSpace?: boolean }> = styled(Box).attrs(
   min-height: 220px;
 `;
 
-function StepConfirmation({
-  account,
-  t,
-  optimisticOperation,
-  error,
-  theme,
-  device,
-  isNFTSend,
-  signed,
-  currencyName,
-}: StepProps & { theme: * }) {
+function StepConfirmation({ t, optimisticOperation, error, signed }: StepProps & { theme: * }) {
   if (optimisticOperation) {
     return (
       <Container>
@@ -88,7 +78,6 @@ export function StepConfirmationFooter({
   return (
     <>
       {concernedOperation ? (
-        // FIXME make a standalone component!
         <Button
           ml={2}
           id={"send-confirmation-opc-button"}

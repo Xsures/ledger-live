@@ -3,6 +3,7 @@ import React, { useState, useCallback } from "react";
 import {
   Transaction as EthereumTransaction,
   TransactionStatus,
+  TransactionRaw,
 } from "@ledgerhq/live-common/families/ethereum/types";
 import { EIP1559ShouldBeUsed } from "@ledgerhq/live-common/families/ethereum/transaction";
 import { useFeesStrategy } from "@ledgerhq/live-common/families/ethereum/react";
@@ -24,6 +25,7 @@ type Props = {
   parentAccount: Account | undefined;
   updateTransaction: Result<EthereumTransaction>["updateTransaction"];
   status: TransactionStatus;
+  transactionRaw?: TransactionRaw;
 };
 
 const Root = (props: Props) => {

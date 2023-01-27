@@ -141,6 +141,14 @@ export const PriorityFeeHigherThanMaxFee = createCustomErrorClass(
   "PriorityFeeHigherThanMaxFee"
 );
 export const MaxFeeTooLow = createCustomErrorClass("MaxFeeTooLow");
+
+export const GasFeeLowerThanOldTx = createCustomErrorClass(
+  "GasFeeLowerThanOldTx"
+);
+export const PriorityFeeLowerThanOldTx = createCustomErrorClass(
+  "PriorityFeeLowerThanOldTx"
+);
+
 export const PasswordsDontMatchError =
   createCustomErrorClass("PasswordsDontMatch");
 export const PasswordIncorrectError =

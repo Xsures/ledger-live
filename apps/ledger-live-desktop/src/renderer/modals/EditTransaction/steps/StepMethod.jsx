@@ -1,6 +1,6 @@
 // @flow
 
-import React, { PureComponent, useState } from "react";
+import React, { PureComponent, useState, useEffect } from "react";
 import { Trans } from "react-i18next";
 import Box from "~/renderer/components/Box";
 import Button from "~/renderer/components/Button";
@@ -8,6 +8,7 @@ import styled from "styled-components";
 import CheckBox from "~/renderer/components/CheckBox";
 import Text from "~/renderer/components/Text";
 import type { StepProps } from "../types";
+import { BigNumber } from "bignumber.js";
 
 const FeesWrapper = styled(Box)`
   border: ${p =>
@@ -34,15 +35,22 @@ const Description = styled.div`
   color: ${p => (p.selected ? "white" : "gray")};
 `;
 
-const StepMethod = ({ t }: StepProps) => {
+const StepMethod = ({ t, transaction, transactionRaw }: StepProps) => {
   const [editType, setEditType] = useState("speedup");
   const isCancel = editType === "cancel";
+  transaction.recipient = transactionRaw.recipient;
+  useEffect(() => {
+    transaction.amount = BigNumber(transactionRaw.amount);
+    transaction.nonce = transactionRaw.transactionSequenceNumber;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <Box flow={4}>
       <FeesWrapper
         key={0}
         selected={!isCancel}
         onClick={() => {
+          transaction.amount = transactionRaw.amount;
           setEditType("speedup");
         }}
       >
@@ -60,6 +68,7 @@ const StepMethod = ({ t }: StepProps) => {
         key={1}
         selected={isCancel}
         onClick={() => {
+          transaction.amount = BigNumber(0);
           setEditType("cancel");
         }}
       >
@@ -78,20 +87,17 @@ const StepMethod = ({ t }: StepProps) => {
 };
 
 export class StepMethodFooter extends PureComponent<StepProps> {
-  onNext = async () => {
-    const { transitionTo } = this.props;
-    transitionTo("fees");
-  };
-
   render() {
-    const { t } = this.props;
+    const { t, transaction, transitionTo } = this.props;
     return (
       <>
         <Button
           id={"send-recipient-continue-button"}
           primary
           disabled={false}
-          onClick={this.onNext}
+          onClick={() => {
+            transitionTo(BigNumber(transaction.amount).isGreaterThan(0) ? "fees" : "summary");
+          }}
         >
           {t("common.continue")}
         </Button>

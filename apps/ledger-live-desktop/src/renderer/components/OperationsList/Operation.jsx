@@ -89,7 +89,7 @@ class OperationComponent extends PureComponent<Props> {
     const mainAccount = getMainAccount(account, parentAccount);
     const isConfirmed = isConfirmedOperation(operation, mainAccount, confirmationsNb);
     const editable =
-      !isConfirmed && isOptimistic && currency.id === "ethereum" && operation.type === "OUT";
+      !isConfirmed && isOptimistic && currency.family === "ethereum" && operation.type === "OUT";
     return (
       <OperationRow
         className="operation-row"

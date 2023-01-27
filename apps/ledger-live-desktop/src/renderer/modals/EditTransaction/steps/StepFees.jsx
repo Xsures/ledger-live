@@ -7,11 +7,13 @@ import Box from "~/renderer/components/Box";
 import Button from "~/renderer/components/Button";
 import CurrencyDownStatusAlert from "~/renderer/components/CurrencyDownStatusAlert";
 import ErrorBanner from "~/renderer/components/ErrorBanner";
-import BuyButton from "~/renderer/components/BuyButton";
 import Alert from "~/renderer/components/Alert";
-import AccountFooter from "../AccountFooter";
 import SendAmountFields from "../SendAmountFields";
 import type { StepProps } from "../types";
+import { BigNumber } from "bignumber.js";
+import { GasFeeLowerThanOldTx, PriorityFeeLowerThanOldTx } from "@ledgerhq/errors";
+import TranslatedError from "~/renderer/components/TranslatedError";
+import { EIP1559ShouldBeUsed } from "@ledgerhq/live-common/families/ethereum/transaction";
 
 const StepFees = (props: StepProps) => {
   const {
@@ -24,10 +26,12 @@ const StepFees = (props: StepProps) => {
     status,
     bridgePending,
     updateTransaction,
+    transactionRaw,
   } = props;
-
-  if (!status) return null;
   const mainAccount = account ? getMainAccount(account, parentAccount) : null;
+  const floatValue = BigNumber(transactionRaw.estimatedGasLimit)
+    .times(transactionRaw.maxFeePerGas)
+    .div(new BigNumber(10).pow(mainAccount.unit.magnitude));
 
   return (
     <Box flow={4}>
@@ -42,11 +46,14 @@ const StepFees = (props: StepProps) => {
             onChange={onChangeTransaction}
             bridgePending={bridgePending}
             updateTransaction={updateTransaction}
+            transactionRaw={transactionRaw}
           />
         </Fragment>
       )}
       <Alert type="primary">
-        <div>{`${t("operation.edit.previousFeesInfo")} 0.1 ${mainAccount.currency.ticker}`}</div>
+        <div>{`${t("operation.edit.previousFeesInfo")} ${floatValue} ${
+          mainAccount.currency.ticker
+        }`}</div>
       </Alert>
     </Box>
   );
@@ -59,33 +66,33 @@ export class StepFeesFooter extends PureComponent<StepProps> {
   };
 
   render() {
-    const { account, parentAccount, status, bridgePending, isNFTSend } = this.props;
-    const { errors } = status;
-    if (!account) return null;
-
-    const mainAccount = getMainAccount(account, parentAccount);
-    const isTerminated = mainAccount.currency.terminated;
-    const hasErrors = Object.keys(errors).length;
-    const canNext = !bridgePending && !hasErrors && !isTerminated;
-    const {
-      gasPrice: gasPriceError,
-      maxPriorityFee: maxPriorityFeeError,
-      maxFee: maxFeeError,
-    } = errors;
-
+    const { transaction, bridgePending, transactionRaw, account } = this.props;
+    let ifGasFeeValid = true;
+    if (EIP1559ShouldBeUsed(account.currency)) {
+      ifGasFeeValid = BigNumber(transaction.maxPriorityFeePerGas).isGreaterThan(
+        transactionRaw.maxPriorityFeePerGas,
+      );
+    } else {
+      ifGasFeeValid = BigNumber(transaction.gasPrice).isGreaterThan(transactionRaw.gasPrice);
+    }
     return (
       <>
-        {!isNFTSend ? (
-          <AccountFooter parentAccount={parentAccount} account={account} status={status} />
-        ) : null}
-        {gasPriceError || maxPriorityFeeError || maxFeeError ? (
-          <BuyButton currency={mainAccount.currency} account={mainAccount} />
-        ) : null}
+        {ifGasFeeValid ? null : (
+          <Alert type={"error"}>
+            <TranslatedError
+              error={
+                EIP1559ShouldBeUsed(account.currency)
+                  ? new PriorityFeeLowerThanOldTx()
+                  : new GasFeeLowerThanOldTx()
+              }
+            />
+          </Alert>
+        )}
         <Button
           id={"send-amount-continue-button"}
           isLoading={bridgePending}
           primary
-          disabled={!canNext}
+          disabled={!ifGasFeeValid}
           onClick={this.onNext}
         >
           <Trans i18nKey="common.continue" />

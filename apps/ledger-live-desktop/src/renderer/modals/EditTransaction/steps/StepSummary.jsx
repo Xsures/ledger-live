@@ -15,17 +15,15 @@ import CryptoCurrencyIcon from "~/renderer/components/CryptoCurrencyIcon";
 import Ellipsis from "~/renderer/components/Ellipsis";
 import FormattedVal from "~/renderer/components/FormattedVal";
 import Text from "~/renderer/components/Text";
-import TranslatedError from "~/renderer/components/TranslatedError";
-import IconExclamationCircle from "~/renderer/icons/ExclamationCircle";
 import IconQrCode from "~/renderer/icons/QrCode";
 import IconWallet from "~/renderer/icons/Wallet";
 import { rgba } from "~/renderer/styles/helpers";
 import CounterValue from "~/renderer/components/CounterValue";
-import Alert from "~/renderer/components/Alert";
-import NFTSummary from "~/renderer/screens/nft/Send/Summary";
 import type { ThemedComponent } from "~/renderer/styles/StyleProvider";
 import type { StepProps } from "../types";
 import AccountTagDerivationMode from "~/renderer/components/AccountTagDerivationMode";
+import { EIP1559ShouldBeUsed } from "@ledgerhq/live-common/families/ethereum/transaction";
+import { BigNumber } from "bignumber.js";
 
 const FromToWrapper: ThemedComponent<{}> = styled.div``;
 const Circle: ThemedComponent<{}> = styled.div`
@@ -54,35 +52,42 @@ const Separator: ThemedComponent<{}> = styled.div`
 
 export default class StepSummary extends PureComponent<StepProps> {
   render() {
-    const { account, parentAccount, transaction, status, isNFTSend } = this.props;
+    const { account, parentAccount, transaction, status, transactionRaw } = this.props;
     if (!account) return null;
     const mainAccount = getMainAccount(account, parentAccount);
     if (!mainAccount || !transaction) return null;
-    const { estimatedFees, amount, totalSpent, warnings } = status;
-    const feeTooHigh = warnings.feeTooHigh;
+    const { estimatedFees, totalSpent } = status;
+    const amount = transaction.amount;
+    console.log(amount);
+    if (amount.isEqualTo(BigNumber(0))) {
+      // increase gas fees in case of cancel flow as we don't have the fees input screen for cancel flow
+      if (EIP1559ShouldBeUsed(account.currency)) {
+        transaction.maxFeePerGas = BigNumber(
+          BigNumber(transactionRaw.maxFeePerGas)
+            .multipliedBy(1.3)
+            .toFixed(),
+        );
+        transaction.maxPriorityFeePerGas = BigNumber(
+          BigNumber(transactionRaw.maxPriorityFeePerGas)
+            .multipliedBy(1.1)
+            .toFixed(),
+        );
+      } else {
+        transaction.gasPrice = BigNumber(
+          BigNumber(transactionRaw.gasPrice)
+            .multipliedBy(1.3)
+            .toFixed(),
+        );
+      }
+    }
     const currency = getAccountCurrency(account);
     const feesUnit = getAccountUnit(mainAccount);
     const feesCurrency = getAccountCurrency(mainAccount);
     const unit = getAccountUnit(account);
-    const hasNonEmptySubAccounts =
-      account.type === "Account" &&
-      (account.subAccounts || []).some(subAccount => subAccount.balance.gt(0));
-
-    // $FlowFixMe
     const memo = transaction.memo;
 
     return (
       <Box flow={4} mx={40}>
-        {transaction.useAllAmount && hasNonEmptySubAccounts ? (
-          <Alert type="primary">
-            <Trans
-              i18nKey="send.steps.details.subaccountsWarning"
-              values={{
-                currency: currency.name,
-              }}
-            />
-          </Alert>
-        ) : null}
         <FromToWrapper>
           <Box>
             <Box horizontal alignItems="center">
@@ -134,42 +139,38 @@ export default class StepSummary extends PureComponent<StepProps> {
               </Ellipsis>
             </Box>
           )}
-          {!isNFTSend ? (
-            <Box horizontal justifyContent="space-between" mb={2}>
-              <Text ff="Inter|Medium" color="palette.text.shade40" fontSize={4}>
-                <Trans i18nKey="send.steps.details.amount" />
-              </Text>
-              <Box>
-                <FormattedVal
-                  color={"palette.text.shade80"}
-                  disableRounding
-                  unit={unit}
-                  val={amount}
-                  fontSize={4}
-                  inline
-                  showCode
+          <Box horizontal justifyContent="space-between" mb={2}>
+            <Text ff="Inter|Medium" color="palette.text.shade40" fontSize={4}>
+              <Trans i18nKey="send.steps.details.amount" />
+            </Text>
+            <Box>
+              <FormattedVal
+                color={"palette.text.shade80"}
+                disableRounding
+                unit={unit}
+                val={amount}
+                fontSize={4}
+                inline
+                showCode
+              />
+              <Box textAlign="right">
+                <CounterValue
+                  color="palette.text.shade60"
+                  fontSize={3}
+                  currency={currency}
+                  value={amount}
+                  alwaysShowSign={false}
                 />
-                <Box textAlign="right">
-                  <CounterValue
-                    color="palette.text.shade60"
-                    fontSize={3}
-                    currency={currency}
-                    value={amount}
-                    alwaysShowSign={false}
-                  />
-                </Box>
               </Box>
             </Box>
-          ) : (
-            <NFTSummary transaction={transaction} />
-          )}
+          </Box>
           <Box horizontal justifyContent="space-between">
             <Text ff="Inter|Medium" color="palette.text.shade40" fontSize={4}>
               <Trans i18nKey="send.steps.details.fees" />
             </Text>
             <Box>
               <FormattedVal
-                color={feeTooHigh ? "warning" : "palette.text.shade80"}
+                color={"palette.text.shade80"}
                 disableRounding
                 unit={feesUnit}
                 alwaysShowValue
@@ -180,7 +181,7 @@ export default class StepSummary extends PureComponent<StepProps> {
               />
               <Box textAlign="right">
                 <CounterValue
-                  color={feeTooHigh ? "warning" : "palette.text.shade60"}
+                  color={"palette.text.shade60"}
                   fontSize={3}
                   currency={feesCurrency}
                   value={estimatedFees}
@@ -190,15 +191,6 @@ export default class StepSummary extends PureComponent<StepProps> {
               </Box>
             </Box>
           </Box>
-          {feeTooHigh ? (
-            <Box horizontal justifyContent="flex-end" alignItems="center" color="warning">
-              <IconExclamationCircle size={10} />
-              <Text ff="Inter|Medium" fontSize={2} style={{ marginLeft: "5px" }}>
-                <TranslatedError error={feeTooHigh} />
-              </Text>
-            </Box>
-          ) : null}
-
           {!totalSpent.eq(amount) ? (
             <>
               <Separator />

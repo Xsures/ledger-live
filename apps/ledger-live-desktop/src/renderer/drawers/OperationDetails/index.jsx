@@ -242,14 +242,19 @@ const OperationD: React$ComponentType<Props> = (props: Props) => {
     : undefined;
   const isOptimistic = operation.blockHeight === null;
   const editable =
-    isOptimistic && !isConfirmed && operation.type === "OUT" && currency.id === "ethereum";
+    isOptimistic &&
+    !isConfirmed &&
+    operation.type === "OUT" &&
+    currency.family === "ethereum" &&
+    currency.type === "CryptoCurrency";
 
   const dispatch = useDispatch();
-  const handleOpenEditModal = useCallback(() => {
-    dispatch(openModal("MODAL_EDIT_TRANSACTION"));
-  }, [dispatch]);
-
-  // dispatch(openModal("MODAL_SEND", { account, isNFTSend: true, nftId }));
+  const handleOpenEditModal = useCallback(
+    (transactionRaw, transactionSequenceNumber) => {
+      dispatch(openModal("MODAL_EDIT_TRANSACTION", { transactionRaw, transactionSequenceNumber }));
+    },
+    [dispatch],
+  );
 
   return (
     <Box flow={3} px={20} mt={20}>
@@ -359,13 +364,15 @@ const OperationD: React$ComponentType<Props> = (props: Props) => {
           />
         </Box>
       ) : null}
-      {editable ? (
+      {editable && !isNftOperation ? (
         <Alert type="primary">
           <Trans i18nKey="operation.edit.description" />
           <div>
             <Link
               style={{ textDecoration: "underline", fontSize: "13px" }}
-              onClick={handleOpenEditModal}
+              onClick={() => {
+                handleOpenEditModal(operation.transactionRaw, operation.transactionSequenceNumber);
+              }}
             >
               <Trans i18nKey="operation.edit.title" />
             </Link>

@@ -1,6 +1,6 @@
 // @flow
 
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { BigNumber } from "bignumber.js";
 import { connect } from "react-redux";
 import { compose } from "redux";
@@ -11,17 +11,15 @@ import { UserRefusedOnDevice } from "@ledgerhq/errors";
 import { addPendingOperation, getMainAccount } from "@ledgerhq/live-common/account/index";
 import { getAccountCurrency } from "@ledgerhq/live-common/account/helpers";
 import useBridgeTransaction from "@ledgerhq/live-common/bridge/useBridgeTransaction";
-import type { Account, AccountLike, Operation } from "@ledgerhq/types-live";
+import type { Account, AccountLike, Operation, TransactionCommonRaw } from "@ledgerhq/types-live";
 import type { Transaction } from "@ledgerhq/live-common/generated/types";
 import logger from "~/logger";
 import Stepper from "~/renderer/components/Stepper";
 import { SyncSkipUnderPriority } from "@ledgerhq/live-common/bridge/react/index";
-import { getAccountBridge } from "@ledgerhq/live-common/bridge/index";
 import { closeModal, openModal } from "~/renderer/actions/modals";
 import { accountsSelector } from "~/renderer/reducers/accounts";
 import { updateAccountWithUpdater } from "~/renderer/actions/accounts";
 import { getCurrentDevice } from "~/renderer/reducers/devices";
-import Track from "~/renderer/analytics/Track";
 import type { Device } from "@ledgerhq/live-common/hw/actions/types";
 import StepMethod, { StepMethodFooter } from "./steps/StepMethod";
 import StepFees, { StepFeesFooter } from "./steps/StepFees";
@@ -40,13 +38,11 @@ type OwnProps = {|
     recipient?: string,
     amount?: BigNumber,
     disableBacks?: string[],
-    isNFTSend?: boolean,
-    walletConnectProxy?: boolean,
-    nftId?: string,
-    nftCollection?: string,
     transaction?: Transaction,
     onConfirmationHandler: Function,
     onFailHandler: Function,
+    transactionRaw?: TransactionCommonRaw,
+    transactionSequenceNumber?: number,
   },
 |};
 
@@ -64,7 +60,7 @@ type Props = {|
   ...StateProps,
 |};
 
-const createSteps = (disableBacks = []): St[] => [
+const createSteps = (): St[] => [
   {
     id: "method",
     label: <Trans i18nKey="operation.edit.steps.method.title" />,
@@ -83,13 +79,16 @@ const createSteps = (disableBacks = []): St[] => [
     label: <Trans i18nKey="operation.edit.steps.summary.title" />,
     component: StepSummary,
     footer: StepSummaryFooter,
-    onBack: ({ transitionTo }) => transitionTo("fees"),
+    onBack: ({ transitionTo, transaction, transactionRaw }) => {
+      // transit to "fees" page for speedup flow and skip the "fees" page for cancel flow
+      transitionTo(BigNumber(transaction.amount).isGreaterThan(0) ? "fees" : "method");
+    },
   },
   {
     id: "device",
     label: <Trans i18nKey="operation.edit.steps.device.title" />,
     component: StepConnectDevice,
-    onBack: !disableBacks.includes("device") ? ({ transitionTo }) => transitionTo("summary") : null,
+    onBack: ({ transitionTo }) => transitionTo("summary"),
   },
   {
     id: "confirmation",
@@ -124,24 +123,7 @@ const Body = ({
   accounts,
   updateAccountWithUpdater,
 }: Props) => {
-  const openedFromAccount = !!params.account;
-  const isNFTSend = !!params.isNFTSend;
-  const walletConnectProxy = !!params.walletConnectProxy;
-  const [steps] = useState(() => createSteps(params.disableBacks));
-
-  // initial values might coming from deeplink
-  const [maybeAmount, setMaybeAmount] = useState(() => params.amount || null);
-  const [maybeRecipient, setMaybeRecipient] = useState(() => params.recipient || null);
-  const maybeNFTId = useMemo(() => params.nftId, [params.nftId]);
-  const maybeNFTCollection = useMemo(() => params.nftCollection, [params.nftCollection]);
-
-  const onResetMaybeAmount = useCallback(() => {
-    setMaybeAmount(null);
-  }, [setMaybeAmount]);
-
-  const onResetMaybeRecipient = useCallback(() => {
-    setMaybeRecipient(null);
-  }, [setMaybeRecipient]);
+  const [steps] = useState(() => createSteps());
 
   const {
     transaction,
@@ -149,7 +131,6 @@ const Body = ({
     updateTransaction,
     account,
     parentAccount,
-    setAccount,
     status,
     bridgeError,
     bridgePending,
@@ -170,49 +151,6 @@ const Body = ({
   const handleCloseModal = useCallback(() => {
     closeModal("MODAL_EDIT_TRANSACTION");
   }, [closeModal]);
-
-  const handleChangeAccount = useCallback(
-    (nextAccount: AccountLike, nextParentAccount: ?Account) => {
-      if (account !== nextAccount) {
-        setAccount(nextAccount, nextParentAccount);
-      }
-    },
-    [account, setAccount],
-  );
-
-  const handleChangeNFT = useCallback(
-    nextNft => {
-      setAccount(account);
-      const bridge = getAccountBridge(account);
-      const standard = nextNft.standard.toLowerCase();
-
-      setTransaction(
-        bridge.updateTransaction(transaction, {
-          tokenIds: [nextNft.tokenId],
-          quantities: [BigNumber(1)],
-          collection: nextNft.contract,
-          mode: `${standard}.transfer`,
-        }),
-      );
-    },
-    [account, setAccount, setTransaction, transaction],
-  );
-
-  const handleChangeQuantities = useCallback(
-    nextQuantity => {
-      const bridge = getAccountBridge(account);
-      const cleanQuantity = BigNumber(nextQuantity.replace(/\D/g, "") || 0);
-
-      if (!transaction.quantities[0].eq(cleanQuantity)) {
-        setTransaction(
-          bridge.updateTransaction(transaction, {
-            quantities: [BigNumber(cleanQuantity)],
-          }),
-        );
-      }
-    },
-    [account, setTransaction, transaction],
-  );
 
   const handleRetry = useCallback(() => {
     setTransactionError(null);
@@ -242,23 +180,13 @@ const Body = ({
 
   const handleStepChange = useCallback(e => onChangeStepId(e.id), [onChangeStepId]);
 
-  const errorSteps = [];
-
-  if (transactionError) {
-    errorSteps.push(3);
-  } else if (bridgeError) {
-    errorSteps.push(0);
-  }
-
   const error = transactionError || bridgeError;
 
   const stepperProps = {
     title: t("operation.edit.title"),
     stepId,
     steps,
-    errorSteps,
     device,
-    openedFromAccount,
     account,
     parentAccount,
     transaction,
@@ -273,33 +201,21 @@ const Body = ({
     onClose,
     setSigned,
     closeModal: handleCloseModal,
-    onChangeAccount: handleChangeAccount,
     onChangeTransaction: setTransaction,
     onRetry: handleRetry,
     onStepChange: handleStepChange,
     onOperationBroadcasted: handleOperationBroadcasted,
     onTransactionError: handleTransactionError,
-    maybeAmount,
-    onResetMaybeAmount,
-    maybeRecipient,
-    onResetMaybeRecipient,
     updateTransaction,
-    walletConnectProxy,
     onConfirmationHandler: params.onConfirmationHandler,
     onFailHandler: params.onFailHandler,
-    isNFTSend,
-    maybeNFTId,
-    maybeNFTCollection,
-    onChangeQuantities: handleChangeQuantities,
-    onChangeNFT: handleChangeNFT,
+    transactionRaw: params.transactionRaw,
+    transactionSequenceNumber: params.transactionSequenceNumber,
   };
-
-  if (!status) return null;
 
   return (
     <Stepper {...stepperProps}>
       {stepId === "confirmation" ? null : <SyncSkipUnderPriority priority={100} />}
-      <Track onUnmount event="CloseModalSend" />
     </Stepper>
   );
 };

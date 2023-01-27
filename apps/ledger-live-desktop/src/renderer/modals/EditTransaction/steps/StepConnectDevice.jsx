@@ -12,7 +12,6 @@ export default function StepConnectDevice({
   onOperationBroadcasted,
   onTransactionError,
   setSigned,
-  isNFTSend,
   onConfirmationHandler,
   onFailHandler,
   currencyName,

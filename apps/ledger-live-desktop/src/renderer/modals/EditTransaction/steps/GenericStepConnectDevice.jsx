@@ -61,10 +61,9 @@ export default function StepConnectDevice({
 }) {
   const dispatch = useDispatch();
   const broadcast = useBroadcast({ account, parentAccount });
-  const tokenCurrency = account && account.type === "TokenAccount" && account.token;
+  const tokenCurrency = false;
 
   if (!transaction || !account) return null;
-
   return (
     <DeviceAction
       action={action}

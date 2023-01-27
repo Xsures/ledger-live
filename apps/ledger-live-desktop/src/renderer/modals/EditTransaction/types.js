@@ -1,8 +1,7 @@
 // @flow
 
 import type { TFunction } from "react-i18next";
-import { BigNumber } from "bignumber.js";
-import type { Account, AccountLike, Operation } from "@ledgerhq/types-live";
+import type { Account, AccountLike, Operation, TransactionCommonRaw } from "@ledgerhq/types-live";
 import type { Transaction, TransactionStatus } from "@ledgerhq/live-common/generated/types";
 import type { Device } from "@ledgerhq/live-common/hw/actions/types";
 import type { Step } from "~/renderer/components/Stepper";
@@ -12,7 +11,6 @@ export type StepId = "method" | "fees" | "summary" | "device" | "confirmation";
 export type StepProps = {
   t: TFunction,
   transitionTo: string => void,
-  openedFromAccount: boolean,
   device: ?Device,
   account: ?AccountLike,
   parentAccount: ?Account,
@@ -23,28 +21,18 @@ export type StepProps = {
   optimisticOperation: ?Operation,
   closeModal: void => void,
   openModal: (string, any) => void,
-  onChangeAccount: (?AccountLike, ?Account) => void,
   onChangeTransaction: Transaction => void,
   onTransactionError: Error => void,
   onOperationBroadcasted: Operation => void,
   onRetry: void => void,
   setSigned: boolean => void,
   signed: boolean,
-  maybeRecipient?: string,
-  onResetMaybeRecipient: () => void,
-  maybeAmount?: BigNumber,
-  onResetMaybeAmount: () => void,
   updateTransaction: (updater: any) => void,
   onConfirmationHandler: Function,
   onFailHandler: Function,
   currencyName: ?string,
-
-  isNFTSend?: boolean,
-  walletConnectProxy?: boolean,
-  maybeNFTId?: string,
-  maybeNFTCollection?: string,
-  onChangeQuantities: any => void,
-  onChangeNFT: any => void,
+  transactionRaw?: TransactionCommonRaw,
+  transactionSequenceNumber?: number,
 };
 
 export type St = Step<StepId, StepProps>;

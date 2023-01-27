@@ -5445,6 +5445,12 @@
     "PriorityFeeHigherThanMaxFee": {
       "title": "Max priority fee cannot be higher than max fee"
     },
+    "GasFeeLowerThanOldTx": {
+      "title": "Gas price can't be lower than your previous transaction"
+    },
+    "PriorityFeeLowerThanOldTx": {
+      "title": "Priority fee can't be lower than your previous transaction"
+    },
     "UnknownMCU": {
       "title": "Unknown MCU version",
       "description": "Please contact Ledger Support"

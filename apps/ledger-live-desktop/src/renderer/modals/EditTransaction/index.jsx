@@ -10,19 +10,10 @@ type Props = {
   onClose: Function,
 };
 
-const MODAL_LOCKED: { [_: StepId]: boolean } = {
-  recipient: true,
-  amount: true,
-  summary: true,
-  device: true,
-  confirmation: true,
-};
-
 const SendModal = ({ stepId: initialStepId, onClose }: Props) => {
   const [stepId, setStep] = useState(() => initialStepId || "method");
   const handleReset = useCallback(() => setStep("method"), []);
   const handleStepChange = useCallback(stepId => setStep(stepId), []);
-  const isModalLocked = MODAL_LOCKED[stepId];
   return (
     <Modal
       name="MODAL_EDIT_TRANSACTION"
@@ -30,7 +21,7 @@ const SendModal = ({ stepId: initialStepId, onClose }: Props) => {
       refocusWhenChange={stepId}
       onHide={handleReset}
       onClose={onClose}
-      preventBackdropClick={isModalLocked}
+      preventBackdropClick={true}
       render={({ onClose, data }) => (
         <Body
           stepId={stepId}
